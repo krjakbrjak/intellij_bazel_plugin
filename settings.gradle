@@ -8,4 +8,4 @@
  */
 
 rootProject.name = 'bazel_intellij_plugin'
-include('plugin')
+include('plugin', 'bazel')

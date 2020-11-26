@@ -14,7 +14,7 @@ public class Action extends AnAction {
     public void actionPerformed(@NotNull AnActionEvent e) {
         Notification msg = new Notification(
                 STICKY_GROUP.getDisplayId(), null,
-                "Bazel", "Version", "0.0.0",
+                "Bazel", "Version", Library.getVersion(),
                 NotificationType.INFORMATION, null);
         Notifications.Bus.notify(msg);
     }

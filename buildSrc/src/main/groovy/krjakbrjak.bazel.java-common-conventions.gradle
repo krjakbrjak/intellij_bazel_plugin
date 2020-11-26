@@ -19,8 +19,3 @@ dependencies {
     // Use JUnit Jupiter Engine for testing.
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
-
-tasks.named('test') {
-    // Use junit platform for unit tests.
-    useJUnitPlatform()
-}
