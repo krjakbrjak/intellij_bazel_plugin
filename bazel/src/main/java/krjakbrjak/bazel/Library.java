@@ -1,11 +1,8 @@
 package krjakbrjak.bazel;
 
-public class Library
-{
-    private static final String VERSION = "0.0.0";
-
-    public static String getVersion()
-    {
-        return VERSION;
-    }
+/**
+ * A helper interface to get an access to an instance of {@link krjakbrjak.bazel.Context}.
+ */
+public interface Library {
+    Context getContext();
 }
