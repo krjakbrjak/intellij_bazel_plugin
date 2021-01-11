@@ -1,6 +1,6 @@
 plugins {
     id 'krjakbrjak.bazel.java-common-conventions'
-    id 'org.jetbrains.intellij' version '0.6.3'
+    id 'org.jetbrains.intellij' version '0.6.5'
 }
 
 group 'krjakbrjak'
@@ -16,7 +16,7 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version '2020.2.4'
+    version '2020.3.1'
     plugins = ['com.intellij.java']
 }
 
@@ -27,7 +27,7 @@ patchPluginXml {
 }
 
 runPluginVerifier {
-    ideVersions '2020.2.4'
+    ideVersions '2020.3.1'
 }
 
 tasks.named('test') {
