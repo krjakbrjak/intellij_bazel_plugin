@@ -17,9 +17,5 @@
 
     <actions>
         <!-- Add your actions here -->
-        <action id="krjakbrjak.bazel.Action" class="krjakbrjak.bazel.Action" text="Sample action"
-                description="Shows notification">
-            <add-to-group group-id="ToolsMenu" anchor="first"/>
-        </action>
     </actions>
 </idea-plugin>
