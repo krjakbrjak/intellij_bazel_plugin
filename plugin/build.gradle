@@ -12,6 +12,10 @@ repositories {
 
 dependencies {
     implementation project(':bazel')
+
+    testImplementation 'org.mockito:mockito-core:2.7.22'
+    // https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter
+    testCompile group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.6.28'
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -29,9 +33,4 @@ patchPluginXml {
 
 runPluginVerifier {
     ideVersions '2020.3.1'
-}
-
-tasks.named('test') {
-    // Use junit platform for unit tests.
-    useJUnit()
 }

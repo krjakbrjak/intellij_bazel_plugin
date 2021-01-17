@@ -10,9 +10,28 @@
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
+        <projectService serviceImplementation="krjakbrjak.bazel.plugin.settings.BazelSettings"/>
+        <applicationService serviceInterface="krjakbrjak.bazel.plugin.project.services.JdkResolver"
+                            serviceImplementation="krjakbrjak.bazel.plugin.project.services.JdkResolverImpl"
+                            testServiceImplementation="krjakbrjak.bazel.plugin.services.JdkResolverTest"/>
+        <applicationService serviceInterface="krjakbrjak.bazel.BazelCommands"
+                            testServiceImplementation="krjakbrjak.bazel.plugin.services.BazelCommandsTest"
+                            serviceImplementation="krjakbrjak.bazel.Workspace"/>
+        <applicationService serviceInterface="krjakbrjak.bazel.Library"
+                            testServiceImplementation="krjakbrjak.bazel.plugin.LibraryTestImpl"
+                            serviceImplementation="krjakbrjak.bazel.LibraryImpl"/>
+        <projectService serviceImplementation="krjakbrjak.bazel.plugin.settings.BazelLocalSettings"/>
+        <projectImportProvider implementation="krjakbrjak.bazel.plugin.project.BazelProjectImportProvider"/>
+        <projectImportBuilder implementation="krjakbrjak.bazel.plugin.project.BazelProjectImportBuilder"/>
+        <projectConfigurable instance="krjakbrjak.bazel.plugin.project.settings.BazelProjectConfigurable"/>
+        <configurationType implementation="krjakbrjak.bazel.plugin.project.execution.BazelConfigurationType"/>
+        <externalSystemManager implementation="krjakbrjak.bazel.plugin.project.BazelManager"/>
+        <registryKey key="BAZEL.system.in.process" defaultValue="true"
+                     description="Use 'in-process' mode for Bazel builds"/>
     </extensions>
 
     <actions>
