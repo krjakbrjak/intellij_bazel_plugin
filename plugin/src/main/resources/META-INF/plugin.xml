@@ -4,7 +4,8 @@
     <vendor email="programmistov.programmist@gmail.com" url="https://github.com/krjakbrjak">krjakbrjak</vendor>
 
     <description><![CDATA[
-    Bazel plugin
+    Integrates <a href="https://bazel.build/">Bazel build system</a>.
+    <p>Currently it adds an option to import Bazel project from existing sources.</p>
     ]]></description>
 
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
