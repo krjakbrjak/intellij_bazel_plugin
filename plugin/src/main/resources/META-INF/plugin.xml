@@ -34,6 +34,7 @@
         <externalSystemManager implementation="krjakbrjak.bazel.plugin.project.BazelManager"/>
         <registryKey key="BAZEL.system.in.process" defaultValue="true"
                      description="Use 'in-process' mode for Bazel builds"/>
+        <externalProjectDataService implementation="krjakbrjak.bazel.plugin.project.BazelProjectDataService"/>
     </extensions>
 
     <actions>
