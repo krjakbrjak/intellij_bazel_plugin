@@ -15,6 +15,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
+        <moduleBuilder builderClass="krjakbrjak.bazel.plugin.project.BazelModuleBuilder"/>
         <projectService serviceImplementation="krjakbrjak.bazel.plugin.settings.BazelSettings"/>
         <applicationService serviceInterface="krjakbrjak.bazel.plugin.project.services.JdkResolver"
                             serviceImplementation="krjakbrjak.bazel.plugin.project.services.JdkResolverImpl"
