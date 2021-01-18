@@ -49,10 +49,11 @@ public class JavaParser {
             return FilenameUtils.getBaseName(filePath);
         }
 
+        String unixFilePath = FilenameUtils.separatorsToUnix(filePath);
         String sourceRoot = StringUtils.substringBefore(
-                filePath, StringUtils.replace(packageName, ".", "/"));
+                unixFilePath, StringUtils.replace(packageName, ".", "/"));
 
-        if (sourceRoot == null || sourceRoot.equals(filePath)) {
+        if (sourceRoot == null || sourceRoot.equals(unixFilePath)) {
             throw new IOException(resourceBundle.getString("bazel.parser.error"));
         }
 
