@@ -112,7 +112,6 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
                 settings.getExternalProjectPath())
                 .thenApplyAsync(result -> {
                     if (result.getReturnCode() == 0) {
-                        result.getOutput().stream().forEach(System.out::println);
                         return new ArrayList<>(result.getOutput());
                     }
                     return null;
