@@ -15,7 +15,7 @@ public class Workspace implements BazelCommands {
     public CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath) {
         return ctx.getExecutable().run(workspacePath, List.of(
                 "query",
-                "//...",
+                "...",
                 "--output",
                 "package"));
     }
