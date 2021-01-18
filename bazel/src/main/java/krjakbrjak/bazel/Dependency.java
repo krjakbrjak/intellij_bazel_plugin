@@ -1,8 +1,7 @@
 package krjakbrjak.bazel;
 
-import krjakbrjak.bazel.utils.JavaParser;
+import krjakbrjak.bazel.utils.JavaUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -29,7 +28,7 @@ public class Dependency {
     public static String getSourceSet(Dependency dependency) {
         if (dependency.getSourceType().equals(SourceType.SOURCE_CODE)) {
             try {
-                return JavaParser.getSourceRoot(new File(dependency.getPath()));
+                return JavaUtils.getSourceSet(dependency.getPath());
             } catch (IOException ignored) {
             }
         }
