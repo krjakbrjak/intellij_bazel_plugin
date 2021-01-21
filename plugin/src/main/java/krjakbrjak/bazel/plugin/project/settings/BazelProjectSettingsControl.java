@@ -9,6 +9,7 @@ import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.util.ui.GridBag;
 import com.intellij.util.ui.UIUtil;
 import krjakbrjak.bazel.BazelCommands;
+import krjakbrjak.bazel.CommandLogger;
 import krjakbrjak.bazel.ExecutableContext;
 import krjakbrjak.bazel.Library;
 import krjakbrjak.bazel.plugin.project.BazelModuleSetup;
@@ -38,10 +39,12 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
                     settings.setCurrentPackage(-1);
                     settings.setTargets(null);
                     settings.setCurrentTarget(-1);
-                    getPackages(settings).thenAccept(packages -> {
-                        settings.setPackages(packages);
-                        setup.setData(settings);
-                    });
+                    ProgressDialog dialog = new ProgressDialog();
+                    getPackages(settings, (line, isError) -> {})
+                            .thenAcceptAsync(packages -> {
+                                settings.setPackages(packages);
+                                setup.setData(settings);
+                            });
                 }
             }
 
@@ -101,7 +104,7 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
                 });
     }
 
-    private static CompletableFuture<List<String>> getPackages(@NotNull BazelProjectSettings settings) {
+    private static CompletableFuture<List<String>> getPackages(@NotNull BazelProjectSettings settings, CommandLogger logger) {
         ExecutableContext exeCtx = ServiceManager.getService(Library.class)
                 .getContext()
                 .getExecutableBuilder()
@@ -109,11 +112,12 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
                 .build();
         return ServiceManager.getService(BazelCommands.class).queryAllPackages(
                 exeCtx,
-                settings.getExternalProjectPath())
+                settings.getExternalProjectPath(), logger)
                 .thenApplyAsync(result -> {
                     if (result.getReturnCode() == 0) {
                         return new ArrayList<>(result.getOutput());
                     }
+                    logger.write(result.getError(), true);
                     return null;
                 });
     }

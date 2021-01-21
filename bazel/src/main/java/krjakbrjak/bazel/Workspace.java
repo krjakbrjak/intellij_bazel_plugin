@@ -12,12 +12,13 @@ import java.util.stream.Collectors;
  */
 public class Workspace implements BazelCommands {
     @Override
-    public CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath) {
+    public CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath, CommandLogger logger) {
         return ctx.getExecutable().run(workspacePath, List.of(
                 "query",
                 "...",
                 "--output",
-                "package"));
+                "package"),
+                logger);
     }
 
     @Override

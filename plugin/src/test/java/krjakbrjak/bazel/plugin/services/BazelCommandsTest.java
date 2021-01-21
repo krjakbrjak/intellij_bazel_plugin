@@ -1,6 +1,7 @@
 package krjakbrjak.bazel.plugin.services;
 
 import krjakbrjak.bazel.BazelCommands;
+import krjakbrjak.bazel.CommandLogger;
 import krjakbrjak.bazel.ExecutableContext;
 import krjakbrjak.bazel.Result;
 
@@ -16,7 +17,7 @@ public class BazelCommandsTest implements BazelCommands {
     }
 
     @Override
-    public CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath) {
+    public CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath, CommandLogger logger) {
         return mockBazel.queryAllPackages(ctx, workspacePath);
     }
 

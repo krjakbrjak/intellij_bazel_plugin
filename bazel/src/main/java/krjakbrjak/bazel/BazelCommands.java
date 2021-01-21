@@ -13,7 +13,12 @@ public interface BazelCommands {
      * @param workspacePath A path to a directory that contains WORKSPACE file.
      * @return {@code CompletableFuture<Result>} object.
      */
-    CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath);
+    CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath, CommandLogger logger);
+
+    default CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath) {
+        return queryAllPackages(ctx, workspacePath, (a, b) -> {
+        });
+    }
 
     /**
      * Returns all dependencies for a given {@code target}.
