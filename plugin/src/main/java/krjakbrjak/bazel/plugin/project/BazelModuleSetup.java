@@ -7,6 +7,7 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import krjakbrjak.bazel.plugin.settings.BazelProjectSettings;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -52,9 +53,9 @@ public class BazelModuleSetup {
         if (model != null) {
             model.addTableModelListener(e -> {
                 BazelProjectSettings settings = new BazelProjectSettings();
-                settings.setExecutable(getExecutable());
-                setData(settings);
-                listener.onBazelExecutableChanged(getExecutable());
+                if (getExecutable() != null) {
+                    listener.onBazelExecutableChanged(getExecutable());
+                }
             });
         }
 
@@ -171,9 +172,13 @@ public class BazelModuleSetup {
 
     private List<String> getExecutable() {
         if (model.getRowCount() > 0) {
-            return model.getDataVector()
+            List<String> exe = model.getDataVector()
                     .stream()
                     .map(vector -> (String) vector.elementAt(0)).collect(Collectors.toList());
+            if (StringUtils.isEmpty(exe.stream().collect(Collectors.joining()))) {
+                return null;
+            }
+            return exe;
         }
         return null;
     }
@@ -249,7 +254,7 @@ public class BazelModuleSetup {
      * @return {@code boolean}
      */
     public boolean validate() {
-        return getExecutable() != null && getExecutable().size() > 0 &&
+        return getExecutable() != null &&
                 targetModel.getSize() > 0 &&
                 targetModel.getSelectedItem() != null;
     }
