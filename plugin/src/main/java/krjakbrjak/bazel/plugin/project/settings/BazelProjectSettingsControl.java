@@ -132,12 +132,12 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
 
     @Override
     protected boolean isExtraSettingModified() {
-        return setup.isModified((BazelProjectSettings) getInitialSettings());
+        return setup.isModified(getInitialSettings());
     }
 
     @Override
     protected void resetExtraSettings(boolean isDefaultModuleCreation) {
-        setup.setData((BazelProjectSettings) getInitialSettings());
+        setup.setData(getInitialSettings());
     }
 
     @Override
