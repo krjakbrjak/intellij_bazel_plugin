@@ -15,15 +15,34 @@ import java.util.stream.Collectors;
 /**
  * This class starts the process and reads (concurrently) its input and error streams.
  */
-public final class CommandStream {
+public final class CommandStream implements Handle<Result> {
     private final Process process;
     private final List<Pair<Boolean, String>> lines = Collections.synchronizedList(new ArrayList<>());
     private final List<CompletableFuture<Void>> streamReadingFuture = new ArrayList<>();
+    /**
+     * A future that is called when the process is finished/terminated.
+     */
+    private final CompletableFuture<Result> future;
 
     public CommandStream(ProcessBuilder processBuilder, CommandLogger logger) throws IOException {
         process = processBuilder.start();
         streamReadingFuture.add(readInputStreamAsync(process.getInputStream(), false, logger, lines));
         streamReadingFuture.add(readInputStreamAsync(process.getErrorStream(), true, logger, lines));
+        future = process.onExit().thenApplyAsync(p -> {
+            streamReadingFuture.forEach(CompletableFuture::join);
+            int rc = p.exitValue();
+            return new Result(
+                    lines.stream()
+                            .filter(item -> item.getLeft().equals(true))
+                            .map(Pair::getRight)
+                            .collect(Collectors.joining()),
+                    lines.stream()
+                            .filter(item -> item.getLeft().equals(false))
+                            .map(Pair::getRight)
+                            .collect(Collectors.toList()),
+                    rc
+            );
+        });
     }
 
     /**
@@ -72,25 +91,17 @@ public final class CommandStream {
         });
     }
 
-    /**
-     * Blocks current thread until the command is finished.
-     *
-     * @return {@link krjakbrjak.bazel.Result} object.
-     * @throws InterruptedException if {@code process} gets interrupted.
-     */
-    public Result getResult() throws InterruptedException {
-        streamReadingFuture.forEach(CompletableFuture::join);
-        int rc = process.waitFor();
-        return new Result(
-                lines.stream()
-                        .filter(item -> item.getLeft().equals(true))
-                        .map(Pair::getRight)
-                        .collect(Collectors.joining()),
-                lines.stream()
-                        .filter(item -> item.getLeft().equals(false))
-                        .map(Pair::getRight)
-                        .collect(Collectors.toList()),
-                rc
-        );
+    @Override
+    public CompletableFuture<Result> onExit() {
+        return future;
+    }
+
+    @Override
+    public void cancel(boolean force) {
+        if (force) {
+            process.destroyForcibly();
+        } else {
+            process.destroy();
+        }
     }
 }

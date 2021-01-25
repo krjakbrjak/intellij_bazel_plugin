@@ -23,8 +23,7 @@ public class LibraryTestImpl implements Library {
     }
 
     private Executable mockExecutable() {
-        Executable exe = mock(Executable.class);
-        return exe;
+        return mock(Executable.class);
     }
 
     @Override

@@ -19,11 +19,11 @@ import java.io.File;
 import java.util.ResourceBundle;
 
 public class BazelProjectImportBuilder extends AbstractExternalProjectImportBuilder<ImportFromBazelControl> {
-    private static ResourceBundle resourceBundle = ResourceBundle.getBundle("Ui");
+    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("Ui");
 
     public BazelProjectImportBuilder() {
         super(ProjectDataManager.getInstance(),
-                () -> new ImportFromBazelControl(),
+                ImportFromBazelControl::new,
                 BazelConstants.SYSTEM_ID);
     }
 

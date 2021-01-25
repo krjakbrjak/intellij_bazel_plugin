@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,20 +57,14 @@ public class CommandBuilder<E extends CommandBuilder<E>> {
      * Starts the command asynchronously.
      *
      * @param logger The logger to catch program's output. See {@link krjakbrjak.bazel.CommandLogger}
-     * @return The new {@link krjakbrjak.bazel.Result} object.
+     * @return The new {@link krjakbrjak.bazel.Handle} object.
+     * @throws IOException If an I/O error occurs.
      */
-    public CompletableFuture<Result> exec(CommandLogger logger) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return new CommandStream(
-                        new ProcessBuilder()
-                                .command(getCommand())
-                                .directory(new File(workingDir)),
-                        logger
-                ).getResult();
-            } catch (InterruptedException | IOException e) {
-                return new Result(e.getLocalizedMessage(), List.of(), -1);
-            }
-        });
+    public Handle<Result> exec(CommandLogger logger) throws IOException {
+        return new CommandStream(
+                new ProcessBuilder()
+                        .command(getCommand())
+                        .directory(new File(workingDir)),
+                logger);
     }
 }

@@ -11,6 +11,7 @@ import krjakbrjak.bazel.plugin.settings.BazelExecutionSettings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletionException;
 
@@ -28,10 +29,13 @@ public class BazelTaskManager implements ExternalSystemTaskManager<BazelExecutio
                 .withCommand(settings.getExecutable())
                 .build();
         try {
-            exeCtx.getExecutable().run(projectPath, List.of("build", settings.getTarget()), (line, isError) -> {
-                listener.onTaskOutput(id, String.format("> %s\n", line), true);
-            }).join();
-        } catch (CompletionException e) {
+            exeCtx.getExecutable()
+                    .run(projectPath,
+                            List.of("build", settings.getTarget()),
+                            (line, isError) -> listener.onTaskOutput(id, String.format("> %s\n", line), true))
+                    .onExit()
+                    .join();
+        } catch (CompletionException | IOException e) {
             throw new ExternalSystemException(e.getCause().getLocalizedMessage());
         }
     }

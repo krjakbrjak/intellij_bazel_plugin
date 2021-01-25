@@ -1,6 +1,8 @@
 package krjakbrjak.bazel;
 
-import java.util.concurrent.CompletableFuture;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * An interface for common bazel commands.
@@ -11,14 +13,11 @@ public interface BazelCommands {
      *
      * @param ctx           {@link krjakbrjak.bazel.ExecutableContext} object.
      * @param workspacePath A path to a directory that contains WORKSPACE file.
-     * @return {@code CompletableFuture<Result>} object.
+     * @param logger        {@link krjakbrjak.bazel.CommandLogger} object.
+     * @return {@link krjakbrjak.bazel.Handle} object.
+     * @throws IOException If underlying command fails to run.
      */
-    CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath, CommandLogger logger);
-
-    default CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath) {
-        return queryAllPackages(ctx, workspacePath, (a, b) -> {
-        });
-    }
+    Handle<List<String>> queryAllPackages(ExecutableContext ctx, String workspacePath, CommandLogger logger) throws IOException;
 
     /**
      * Returns all dependencies for a given {@code target}.
@@ -26,18 +25,20 @@ public interface BazelCommands {
      * @param ctx           {@link krjakbrjak.bazel.ExecutableContext} object.
      * @param workspacePath A path to a directory that contains WORKSPACE file.
      * @param target        A target.
-     * @return {@code CompletableFuture<Result>} object.
+     * @return {@link krjakbrjak.bazel.Handle} object.
+     * @throws IOException If underlying command fails to run.
      */
-    CompletableFuture<Result> queryAllDependencies(ExecutableContext ctx, String workspacePath, String target);
+    Handle<List<String>> queryAllDependencies(ExecutableContext ctx, String workspacePath, String target) throws IOException;
 
     /**
      * Returns a path to JDK provided by Bazel.
      *
      * @param ctx           {@link krjakbrjak.bazel.ExecutableContext} object.
      * @param workspacePath A path to a directory that contains WORKSPACE file.
-     * @return {@code CompletableFuture<Result>} object.
+     * @return {@link krjakbrjak.bazel.Handle} object.
+     * @throws IOException If underlying command fails to run.
      */
-    CompletableFuture<Result> queryLocalJdk(ExecutableContext ctx, String workspacePath);
+    Handle<Optional<String>> queryLocalJdk(ExecutableContext ctx, String workspacePath) throws IOException;
 
     /**
      * Returns all targets defined in a package {@code pkg}.
@@ -45,7 +46,9 @@ public interface BazelCommands {
      * @param ctx           {@link krjakbrjak.bazel.ExecutableContext} object.
      * @param workspacePath A path to a directory that contains WORKSPACE file.
      * @param pkg           A package.
-     * @return {@code CompletableFuture<Result>} object.
+     * @param logger        {@link krjakbrjak.bazel.CommandLogger} object.
+     * @return {@link krjakbrjak.bazel.Handle} object.
+     * @throws IOException If underlying command fails to run.
      */
-    CompletableFuture<Result> queryAllTargets(ExecutableContext ctx, String workspacePath, String pkg);
+    Handle<List<String>> queryAllTargets(ExecutableContext ctx, String workspacePath, String pkg, CommandLogger logger) throws IOException;
 }
