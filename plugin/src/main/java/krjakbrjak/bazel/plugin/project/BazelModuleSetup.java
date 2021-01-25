@@ -7,12 +7,11 @@ import krjakbrjak.bazel.plugin.settings.BazelProjectSettings;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ItemEvent;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.awt.event.ItemListener;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class BazelModuleSetup {
@@ -108,7 +107,19 @@ public class BazelModuleSetup {
      *
      * @param data {@link krjakbrjak.bazel.plugin.settings.BazelProjectSettings} object.
      */
-    public void setData(BazelProjectSettings data) {
+    public void setData(BazelProjectSettings data, boolean disableUpdates) {
+        TableModelListener[] tableListeners = null;
+        ItemListener[] targetListeners = null;
+        ItemListener[] packageListeners = null;
+        if (disableUpdates) {
+            tableListeners = model.getTableModelListeners();
+            Arrays.stream(tableListeners).forEach(model::removeTableModelListener);
+            targetListeners = targetComboBox.getItemListeners();
+            Arrays.stream(targetListeners).forEach(targetComboBox::removeItemListener);
+            packageListeners = packageComboBox.getItemListeners();
+            Arrays.stream(packageListeners).forEach(packageComboBox::removeItemListener);
+        }
+
         List<String> exec = data.getExecutable();
         List<String> currentExecutable = getExecutable();
         if (!Objects.equals(exec, currentExecutable)) {
@@ -155,6 +166,12 @@ public class BazelModuleSetup {
             if (current > -1 && current < targets.size() && current != targetComboBox.getSelectedIndex()) {
                 targetComboBox.setSelectedIndex(current);
             }
+        }
+
+        if (disableUpdates) {
+            Arrays.stream(tableListeners).forEach(model::addTableModelListener);
+            Arrays.stream(targetListeners).forEach(targetComboBox::addItemListener);
+            Arrays.stream(packageListeners).forEach(packageComboBox::addItemListener);
         }
     }
 

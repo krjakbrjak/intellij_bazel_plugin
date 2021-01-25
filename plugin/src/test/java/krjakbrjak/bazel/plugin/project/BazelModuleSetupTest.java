@@ -6,8 +6,8 @@ import krjakbrjak.bazel.plugin.settings.BazelProjectSettings;
 import java.util.List;
 
 import static org.junit.Assert.assertNotEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class BazelModuleSetupTest extends LightJavaCodeInsightFixtureTestCase {
     public void testSettingGettingData() {
@@ -25,23 +25,20 @@ public class BazelModuleSetupTest extends LightJavaCodeInsightFixtureTestCase {
 
         settings.setCurrentPackage(-10);
         assertEquals(-10, settings.getCurrentPackage());
-        setup.setData(settings);
+        setup.setData(settings, true);
         BazelProjectSettings newSettings = new BazelProjectSettings();
         setup.getData(newSettings);
         assertNotEquals(settings, newSettings);
 
         settings = new BazelProjectSettings();
         settings.setExecutable(List.of("TEST"));
-        setup.setData(settings);
-        verify(listener, times(1)).onBazelExecutableChanged(any());
-        verify(listener, never()).onTargetChanged(any());
-        verify(listener, never()).onPackageChanged(any());
+        setup.setData(settings, true);
+        verifyNoMoreInteractions(listener);
         setup.getData(newSettings);
         assertEquals(settings, newSettings);
 
         settings.setPackages(List.of("PKG"));
-        setup.setData(settings);
-        verify(listener, times(1)).onBazelExecutableChanged(any());
+        setup.setData(settings, true);
         verifyNoMoreInteractions(listener);
         setup.getData(newSettings);
         assertEquals(settings, newSettings);
@@ -50,9 +47,7 @@ public class BazelModuleSetupTest extends LightJavaCodeInsightFixtureTestCase {
         verifyNoMoreInteractions(listener);
 
         settings.setCurrentPackage(0);
-        setup.setData(settings);
-        verify(listener, times(1)).onBazelExecutableChanged(any());
-        verify(listener, times(1)).onPackageChanged(any());
+        setup.setData(settings, true);
         verifyNoMoreInteractions(listener);
         setup.getData(newSettings);
         assertEquals(settings, newSettings);
