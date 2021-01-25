@@ -1,10 +1,13 @@
 package krjakbrjak.bazel.plugin.services;
 
 import krjakbrjak.bazel.BazelCommands;
+import krjakbrjak.bazel.CommandLogger;
 import krjakbrjak.bazel.ExecutableContext;
-import krjakbrjak.bazel.Result;
+import krjakbrjak.bazel.Handle;
 
-import java.util.concurrent.CompletableFuture;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 
@@ -16,22 +19,22 @@ public class BazelCommandsTest implements BazelCommands {
     }
 
     @Override
-    public CompletableFuture<Result> queryAllPackages(ExecutableContext ctx, String workspacePath) {
-        return mockBazel.queryAllPackages(ctx, workspacePath);
+    public Handle<List<String>> queryAllPackages(ExecutableContext ctx, String workspacePath, CommandLogger logger) throws IOException {
+        return mockBazel.queryAllPackages(ctx, workspacePath, logger);
     }
 
     @Override
-    public CompletableFuture<Result> queryAllDependencies(ExecutableContext ctx, String workspacePath, String target) {
+    public Handle<List<String>> queryAllDependencies(ExecutableContext ctx, String workspacePath, String target) throws IOException {
         return mockBazel.queryAllDependencies(ctx, workspacePath, target);
     }
 
     @Override
-    public CompletableFuture<Result> queryLocalJdk(ExecutableContext ctx, String workspacePath) {
+    public Handle<Optional<String>> queryLocalJdk(ExecutableContext ctx, String workspacePath) throws IOException {
         return mockBazel.queryLocalJdk(ctx, workspacePath);
     }
 
     @Override
-    public CompletableFuture<Result> queryAllTargets(ExecutableContext ctx, String workspacePath, String pkg) {
-        return mockBazel.queryAllTargets(ctx, workspacePath, pkg);
+    public Handle<List<String>> queryAllTargets(ExecutableContext ctx, String workspacePath, String pkg, CommandLogger logger) throws IOException {
+        return mockBazel.queryAllTargets(ctx, workspacePath, pkg, logger);
     }
 }

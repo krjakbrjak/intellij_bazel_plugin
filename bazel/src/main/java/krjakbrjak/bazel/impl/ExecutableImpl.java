@@ -1,12 +1,9 @@
 package krjakbrjak.bazel.impl;
 
-import krjakbrjak.bazel.CommandBuilder;
-import krjakbrjak.bazel.CommandLogger;
-import krjakbrjak.bazel.Executable;
-import krjakbrjak.bazel.Result;
+import krjakbrjak.bazel.*;
 
+import java.io.IOException;
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 
 public class ExecutableImpl implements Executable {
     private final Collection<String> command;
@@ -16,7 +13,7 @@ public class ExecutableImpl implements Executable {
     }
 
     @Override
-    public CompletableFuture<Result> run(String workspacePath, Collection<String> options, CommandLogger logger) {
+    public Handle<Result> run(String workspacePath, Collection<String> options, CommandLogger logger) throws IOException {
         return new CommandBuilder<>()
                 .command(getCommand())
                 .workingDir(workspacePath)

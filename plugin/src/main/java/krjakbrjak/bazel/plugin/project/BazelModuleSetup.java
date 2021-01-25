@@ -1,37 +1,25 @@
 package krjakbrjak.bazel.plugin.project;
 
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.ComboBox;
-import com.intellij.openapi.ui.TextBrowseFolderListener;
-import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import krjakbrjak.bazel.plugin.settings.BazelProjectSettings;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ItemEvent;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.awt.event.ItemListener;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class BazelModuleSetup {
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("Ui");
-    // Holds the list of targets. That basically duplicates the content of
-    // targetModel, but having it here makes it easier to decide if combobox
-    // model needs to be updated with new data or not. Otherwise, extraction
-    // of items from the model is required plus its further sorting in order
-    // to make a comparison.
-    private List<String> currentTargets = List.of();
-    private List<String> currentPackages = List.of();
-    private List<String> currentExecutable = List.of();
     private JPanel mainPanel;
     private JPanel optionsPanel;
     private DefaultComboBoxModel<String> targetModel;
     private ComboBox<String> targetComboBox;
-    private TextFieldWithBrowseButton absolutePath;
     private DefaultComboBoxModel<String> packageModel;
     private ComboBox<String> packageComboBox;
     private DefaultTableModel model;
@@ -48,13 +36,28 @@ public class BazelModuleSetup {
         return mainPanel;
     }
 
+    /**
+     * Helper method to get a list of items from a {@code ListModel}
+     *
+     * @param <T>   Data type.
+     * @param model {@link javax.swing.ListModel} object.
+     * @return {@code List<T>}
+     */
+    private <T> List<T> getList(ListModel<T> model) {
+        ArrayList<T> data = new ArrayList<>();
+        for (int i = 0; i < model.getSize(); ++i) {
+            data.add(model.getElementAt(i));
+        }
+
+        return data;
+    }
+
     public void subscribeForChanges(BazelModuleSetupListener listener) {
         if (model != null) {
             model.addTableModelListener(e -> {
-                BazelProjectSettings settings = new BazelProjectSettings();
-                settings.setExecutable(getExecutable());
-                setData(settings);
-                listener.onBazelExecutableChanged(getExecutable());
+                if (getExecutable() != null) {
+                    listener.onBazelExecutableChanged(getExecutable());
+                }
             });
         }
 
@@ -92,17 +95,6 @@ public class BazelModuleSetup {
                 .setRemoveAction(anActionButton -> removeAction())
                 .createPanel();
 
-        absolutePath = new TextFieldWithBrowseButton();
-        absolutePath.addBrowseFolderListener(new TextBrowseFolderListener(
-                new FileChooserDescriptor(false,
-                        true,
-                        true,
-                        true,
-                        true,
-                        true
-                )
-        ));
-
         packageModel = new DefaultComboBoxModel<>();
         packageComboBox = new ComboBox<>(packageModel);
 
@@ -115,30 +107,41 @@ public class BazelModuleSetup {
      *
      * @param data {@link krjakbrjak.bazel.plugin.settings.BazelProjectSettings} object.
      */
-    public void setData(BazelProjectSettings data) {
+    public void setData(BazelProjectSettings data, boolean disableUpdates) {
+        TableModelListener[] tableListeners = null;
+        ItemListener[] targetListeners = null;
+        ItemListener[] packageListeners = null;
+        if (disableUpdates) {
+            tableListeners = model.getTableModelListeners();
+            Arrays.stream(tableListeners).forEach(model::removeTableModelListener);
+            targetListeners = targetComboBox.getItemListeners();
+            Arrays.stream(targetListeners).forEach(targetComboBox::removeItemListener);
+            packageListeners = packageComboBox.getItemListeners();
+            Arrays.stream(packageListeners).forEach(packageComboBox::removeItemListener);
+        }
+
         List<String> exec = data.getExecutable();
+        List<String> currentExecutable = getExecutable();
         if (!Objects.equals(exec, currentExecutable)) {
-            currentExecutable = exec;
             if (exec != null) {
                 Object[][] tmp = new Object[exec.size()][1];
                 for (int i = 0; i < exec.size(); ++i) {
                     tmp[i][0] = exec.get(i);
                 }
                 this.model.setDataVector(tmp, new Object[]{resourceBundle.getString("bazel.setup.options")});
+            } else {
+                this.model.setDataVector(new Object[0][], new Object[]{resourceBundle.getString("bazel.setup.options")});
             }
         }
 
         List<String> packages = data.getPackages();
-        if (!Objects.equals(packages, currentPackages)) {
-            currentPackages = packages;
+        if (!Objects.equals(packages, getList(packageModel))) {
             packageModel.removeAllElements();
 
             if (packages != null) {
                 packageModel.addAll(packages);
-                packageComboBox.setEnabled(true);
-            } else {
-                packageComboBox.setEnabled(false);
             }
+            packageComboBox.setEnabled(packages != null);
         }
 
         if (packages != null) {
@@ -149,16 +152,13 @@ public class BazelModuleSetup {
         }
 
         List<String> targets = data.getTargets();
-        if (!Objects.equals(targets, currentTargets)) {
-            currentTargets = targets;
+        if (!Objects.equals(targets, getList(targetModel))) {
             targetModel.removeAllElements();
 
             if (targets != null) {
                 targetModel.addAll(targets);
-                targetComboBox.setEnabled(true);
-            } else {
-                targetComboBox.setEnabled(false);
             }
+            targetComboBox.setEnabled(targets != null);
         }
 
         if (targets != null) {
@@ -167,13 +167,23 @@ public class BazelModuleSetup {
                 targetComboBox.setSelectedIndex(current);
             }
         }
+
+        if (disableUpdates) {
+            Arrays.stream(tableListeners).forEach(model::addTableModelListener);
+            Arrays.stream(targetListeners).forEach(targetComboBox::addItemListener);
+            Arrays.stream(packageListeners).forEach(packageComboBox::addItemListener);
+        }
     }
 
     private List<String> getExecutable() {
         if (model.getRowCount() > 0) {
-            return model.getDataVector()
+            List<String> exe = model.getDataVector()
                     .stream()
                     .map(vector -> (String) vector.elementAt(0)).collect(Collectors.toList());
+            if (StringUtils.isEmpty(String.join("", exe))) {
+                return null;
+            }
+            return exe;
         }
         return null;
     }
@@ -249,7 +259,7 @@ public class BazelModuleSetup {
      * @return {@code boolean}
      */
     public boolean validate() {
-        return getExecutable() != null && getExecutable().size() > 0 &&
+        return getExecutable() != null &&
                 targetModel.getSize() > 0 &&
                 targetModel.getSelectedItem() != null;
     }

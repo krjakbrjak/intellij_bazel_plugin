@@ -5,8 +5,6 @@ import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.util.concurrency.EdtExecutorService;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -15,7 +13,7 @@ public class JdkResolverImpl implements JdkResolver {
     public Sdk resolveJdk(String javaHome) {
         CompletableFuture<Sdk> completableFuture = new CompletableFuture<>();
         EdtExecutorService.getInstance().execute(() -> {
-            List<Sdk> sdks = Arrays.asList(ProjectJdkTable.getInstance().getAllJdks());
+            Sdk[] sdks = ProjectJdkTable.getInstance().getAllJdks();
             for (Sdk sdk : sdks) {
                 if (Objects.equals(sdk.getHomePath(), javaHome)) {
                     completableFuture.complete(sdk);

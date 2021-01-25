@@ -19,10 +19,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.concurrent.CompletionException;
 
 /**
- * Resolves bazel project info: source sets, jdk, depndencies, etc.
+ * Resolves bazel project info: source sets, jdk, dependencies, etc.
  */
 public class BazelProjectResolver implements ExternalSystemProjectResolver<BazelExecutionSettings> {
     public boolean areExecutionSettingsValid(BazelExecutionSettings settings) {
@@ -101,17 +102,20 @@ public class BazelProjectResolver implements ExternalSystemProjectResolver<Bazel
                 .getExecutableBuilder()
                 .withCommand(settings.getExecutable())
                 .build();
-        bazelCommands.queryLocalJdk(exeCtx, projectPath)
-                .thenAccept(result -> {
-                    if (result.getReturnCode() == 0) {
-                        result.getOutput().forEach(path -> {
+        try {
+            bazelCommands.queryLocalJdk(exeCtx, projectPath)
+                    .onExit()
+                    .thenApplyAsync(optionalPath -> {
+                        optionalPath.ifPresent(path -> {
                             Sdk sdk = ServiceManager.getService(JdkResolver.class).resolveJdk(path);
                             module.createChild(ModuleSdkData.KEY, new ModuleSdkData(sdk.getName()));
                         });
-                    } else {
-                        throw new ExternalSystemException(result.getError());
-                    }
-                }).join();
+                        return null;
+                    })
+                    .join();
+        } catch (IOException e) {
+            throw new ExternalSystemException(e.getLocalizedMessage());
+        }
     }
 
     /**
@@ -128,13 +132,14 @@ public class BazelProjectResolver implements ExternalSystemProjectResolver<Bazel
                 .getExecutableBuilder()
                 .withCommand(settings.getExecutable())
                 .build();
-        bazelCommands.queryAllDependencies(
-                exeCtx, projectPath, settings.getTarget())
-                .thenAccept(result -> {
-                    if (result.getReturnCode() == 0) {
+        try {
+            bazelCommands.queryAllDependencies(
+                    exeCtx, projectPath, settings.getTarget())
+                    .onExit()
+                    .thenApplyAsync(deps -> {
                         LibraryData libraryData = new LibraryData(BazelConstants.SYSTEM_ID,
                                 FilenameUtils.getName(projectPath));
-                        result.getOutput().stream().map(Dependency::new)
+                        deps.stream().map(Dependency::new)
                                 .distinct()
                                 .forEach(entry -> {
                                     if (entry.getSourceType() == SourceType.SOURCE_CODE) {
@@ -151,10 +156,11 @@ public class BazelProjectResolver implements ExternalSystemProjectResolver<Bazel
                                 });
                         module.createChild(ProjectKeys.LIBRARY_DEPENDENCY,
                                 new LibraryDependencyData(module.getData(), libraryData, LibraryLevel.MODULE));
-                    } else {
-                        throw new ExternalSystemException(result.getError());
-                    }
-                })
-                .join();
+                        return null;
+                    })
+                    .join();
+        } catch (IOException e) {
+            throw new ExternalSystemException(e.getLocalizedMessage());
+        }
     }
 }

@@ -15,8 +15,8 @@ public class DependencyTest {
         final List<SourceType> fileTypes = List.of(SourceType.SOURCE_CODE, SourceType.UNKNOWN, SourceType.LIBRARY);
         assertEquals(
                 fileTypes, filePaths.stream()
-                        .map(path -> new Dependency(path))
-                        .map(dep -> dep.getSourceType())
+                        .map(Dependency::new)
+                        .map(Dependency::getSourceType)
                         .collect(Collectors.toList())
         );
     }

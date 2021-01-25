@@ -1,26 +1,26 @@
 package krjakbrjak.bazel.plugin.project.settings;
 
-import com.google.common.base.Objects;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.externalSystem.service.settings.AbstractExternalProjectSettingsControl;
 import com.intellij.openapi.externalSystem.util.ExternalSystemUiUtil;
 import com.intellij.openapi.externalSystem.util.PaintAwarePanel;
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.util.concurrency.EdtExecutorService;
 import com.intellij.util.ui.GridBag;
 import com.intellij.util.ui.UIUtil;
-import krjakbrjak.bazel.BazelCommands;
-import krjakbrjak.bazel.ExecutableContext;
-import krjakbrjak.bazel.Library;
+import krjakbrjak.bazel.*;
 import krjakbrjak.bazel.plugin.project.BazelModuleSetup;
 import krjakbrjak.bazel.plugin.project.BazelModuleSetupListener;
+import krjakbrjak.bazel.plugin.project.ProgressDialog;
 import krjakbrjak.bazel.plugin.settings.BazelProjectSettings;
 import krjakbrjak.bazel.plugin.settings.BazelSettings;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 
 public class BazelProjectSettingsControl extends AbstractExternalProjectSettingsControl<BazelProjectSettings> {
     private final BazelModuleSetup setup = BazelModuleSetup.getInstance();
@@ -31,18 +31,45 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
             @Override
             public void onBazelExecutableChanged(List<String> executable) {
                 BazelProjectSettings settings = getInitialSettings();
-                if (!Objects.equal(settings.getExecutable(), executable)) {
-                    // Sets an executable and invalidates the rest of the settings
-                    settings.setExecutable(executable);
-                    settings.setPackages(null);
-                    settings.setCurrentPackage(-1);
-                    settings.setTargets(null);
-                    settings.setCurrentTarget(-1);
-                    getPackages(settings).thenAccept(packages -> {
-                        settings.setPackages(packages);
-                        setup.setData(settings);
-                    });
+                // Sets an executable and invalidates the rest of the settings
+                settings.setExecutable(executable);
+                settings.setPackages(null);
+                settings.setCurrentPackage(-1);
+                settings.setTargets(null);
+                settings.setCurrentTarget(-1);
+                ProgressDialog dialog = new ProgressDialog();
+                Handle<List<String>> handle = null;
+                try {
+                    handle = getPackages(settings, (line, isError) -> dialog.append(line + "\n"));
+                    handle.onExit()
+                            .thenApplyAsync(packages -> {
+                                settings.setPackages(packages);
+                                if (packages == null) {
+                                    return Optional.of(false);
+                                }
+                                return Optional.of(true);
+                            })
+                            .thenApplyAsync(optionalBoolean -> {
+                                optionalBoolean.ifPresent(ok -> {
+                                    dialog.setError(ok);
+                                    if (ok) {
+                                        EdtExecutorService.getInstance().execute(() ->
+                                                dialog.close(DialogWrapper.OK_EXIT_CODE));
+                                    }
+                                });
+                                return null;
+                            });
+                } catch (IOException e) {
+                    dialog.append(e.getLocalizedMessage() + "\n");
+                    dialog.setError(true);
                 }
+                if (!dialog.showAndGet()) {
+                    settings.setExecutable(null);
+                }
+                if (handle != null) {
+                    handle.cancel(false);
+                }
+                setup.setData(settings, true);
             }
 
             @Override
@@ -73,9 +100,41 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
                     int oldCurrent = settings.getCurrentPackage();
                     if (newCurrent != oldCurrent) {
                         settings.setCurrentPackage(newCurrent);
-                        getTargets(settings).thenAccept(targets -> {
-                            settings.setTargets(targets);
-                            setup.setData(settings);
+                        EdtExecutorService.getInstance().execute(() -> {
+                            ProgressDialog dialog = new ProgressDialog();
+                            Handle<List<String>> handle = null;
+                            try {
+                                handle = getTargets(settings, (line, isError) -> dialog.append(line + "\n"));
+                                handle.onExit()
+                                        .thenApplyAsync(targets -> {
+                                            settings.setTargets(targets);
+                                            if (targets == null) {
+                                                return Optional.of(false);
+                                            }
+                                            return Optional.of(true);
+                                        })
+                                        .thenApplyAsync(optionalBoolean -> {
+                                            optionalBoolean.ifPresent(ok -> {
+                                                dialog.setError(ok);
+                                                if (ok) {
+                                                    EdtExecutorService.getInstance().execute(() ->
+                                                            dialog.close(DialogWrapper.OK_EXIT_CODE));
+                                                }
+                                            });
+                                            return null;
+                                        });
+                            } catch (IOException e) {
+                                dialog.setError(true);
+                                dialog.append(e.getLocalizedMessage() + "\n");
+                            }
+                            if (!dialog.showAndGet()) {
+                                settings.setPackages(null);
+                                //settings.setExecutable(null);
+                            }
+                            if (handle != null) {
+                                handle.cancel(false);
+                            }
+                            setup.setData(settings, true);
                         });
                     }
                 }
@@ -83,7 +142,7 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
         });
     }
 
-    private static CompletableFuture<List<String>> getTargets(@NotNull BazelProjectSettings settings) {
+    private static Handle<List<String>> getTargets(@NotNull BazelProjectSettings settings, CommandLogger logger) throws IOException {
         ExecutableContext exeCtx = ServiceManager.getService(Library.class)
                 .getContext()
                 .getExecutableBuilder()
@@ -92,16 +151,11 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
         return ServiceManager.getService(BazelCommands.class).queryAllTargets(
                 exeCtx,
                 settings.getExternalProjectPath(),
-                settings.getPackages().get(settings.getCurrentPackage()))
-                .thenApplyAsync(result -> {
-                    if (result.getReturnCode() == 0) {
-                        return new ArrayList<>(result.getOutput());
-                    }
-                    return null;
-                });
+                settings.getPackages().get(settings.getCurrentPackage()),
+                logger);
     }
 
-    private static CompletableFuture<List<String>> getPackages(@NotNull BazelProjectSettings settings) {
+    private static Handle<List<String>> getPackages(@NotNull BazelProjectSettings settings, CommandLogger logger) throws IOException {
         ExecutableContext exeCtx = ServiceManager.getService(Library.class)
                 .getContext()
                 .getExecutableBuilder()
@@ -109,13 +163,7 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
                 .build();
         return ServiceManager.getService(BazelCommands.class).queryAllPackages(
                 exeCtx,
-                settings.getExternalProjectPath())
-                .thenApplyAsync(result -> {
-                    if (result.getReturnCode() == 0) {
-                        return new ArrayList<>(result.getOutput());
-                    }
-                    return null;
-                });
+                settings.getExternalProjectPath(), logger);
     }
 
     @Override
@@ -128,12 +176,12 @@ public class BazelProjectSettingsControl extends AbstractExternalProjectSettings
 
     @Override
     protected boolean isExtraSettingModified() {
-        return setup.isModified((BazelProjectSettings) getInitialSettings());
+        return setup.isModified(getInitialSettings());
     }
 
     @Override
     protected void resetExtraSettings(boolean isDefaultModuleCreation) {
-        setup.setData((BazelProjectSettings) getInitialSettings());
+        setup.setData(getInitialSettings(), true);
     }
 
     @Override

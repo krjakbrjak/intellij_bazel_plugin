@@ -10,12 +10,14 @@ import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskNotifica
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskType;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 import krjakbrjak.bazel.BazelCommands;
-import krjakbrjak.bazel.Result;
+import krjakbrjak.bazel.Handle;
 import krjakbrjak.bazel.plugin.services.BazelCommandsTest;
 import krjakbrjak.bazel.plugin.settings.BazelExecutionSettings;
 import krjakbrjak.bazel.plugin.util.BazelConstants;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -31,13 +33,18 @@ public class BazelProjectResolverTest extends LightJavaCodeInsightFixtureTestCas
         return exeSettings;
     }
 
-    public void testResolveProjectInfo() {
+    public void testResolveProjectInfo() throws IOException {
         var bazelCommands = ((BazelCommandsTest) ServiceManager.getService(BazelCommands.class)).getMockBazel();
-        when(bazelCommands.queryLocalJdk(any(), any())).thenReturn(CompletableFuture.completedFuture(
-                new Result("", List.of("/test/jdk"), 0)
-        ));
-        when(bazelCommands.queryAllDependencies(any(), any(), any())).thenReturn(
-                CompletableFuture.completedFuture(new Result("", List.of("/test/jdk"), 0))
+        Handle<Optional<String>> handle = (Handle<Optional<String>>) mock(Handle.class);
+        when(bazelCommands.queryLocalJdk(any(), any())).thenReturn(handle);
+        when(handle.onExit()).thenReturn(
+                CompletableFuture.completedFuture(Optional.of("/test/jdk"))
+        );
+
+        Handle<List<String>> handle2 = (Handle<List<String>>) mock(Handle.class);
+        when(bazelCommands.queryAllDependencies(any(), any(), any())).thenReturn(handle2);
+        when(handle2.onExit()).thenReturn(
+                CompletableFuture.completedFuture(List.of("/test/jdk"))
         );
 
         ExternalSystemTaskNotificationListener listener = mock(ExternalSystemTaskNotificationListener.class);
@@ -109,13 +116,18 @@ public class BazelProjectResolverTest extends LightJavaCodeInsightFixtureTestCas
         assertTrue(resolver.areExecutionSettingsValid(settings));
     }
 
-    public void testWrongExecutableReturn() {
+    public void testWrongExecutableReturn() throws IOException {
         var bazelCommands = ((BazelCommandsTest) ServiceManager.getService(BazelCommands.class)).getMockBazel();
-        when(bazelCommands.queryLocalJdk(any(), any())).thenReturn(CompletableFuture.completedFuture(
-                new Result("", List.of(), -1)
-        ));
-        when(bazelCommands.queryAllDependencies(any(), any(), any())).thenReturn(
-                CompletableFuture.completedFuture(new Result("", List.of(), -1))
+        Handle<Optional<String>> handle = (Handle<Optional<String>>) mock(Handle.class);
+        when(bazelCommands.queryLocalJdk(any(), any())).thenThrow(IOException.class);
+        when(handle.onExit()).thenReturn(
+                CompletableFuture.completedFuture(Optional.empty())
+        );
+
+        Handle<List<String>> handle2 = (Handle<List<String>>) mock(Handle.class);
+        when(bazelCommands.queryAllDependencies(any(), any(), any())).thenReturn(handle2);
+        when(handle2.onExit()).thenReturn(
+                CompletableFuture.completedFuture(List.of())
         );
 
         BazelExecutionSettings exeSettings = mockExecutionSettings();
