@@ -10,13 +10,14 @@ public class JavaFileProcessor implements JavaProcessor {
     private final static ResourceBundle resourceBundle = ResourceBundle.getBundle("Bazel");
 
     @Override
-    public String getSourceRoot(String content, String filePath, JavaUnit unit) throws IOException {
-        String packageName = unit.getPackageName(content);
+    public String getSourceRoot(String filePath, JavaUnit unit) throws IOException {
+        String packageName = unit.getPackageName();
+        String unixFilePath = FilenameUtils.separatorsToUnix(filePath);
+
         if (StringUtils.isEmpty(packageName)) {
-            return FilenameUtils.getBaseName(filePath);
+            return unixFilePath.substring(0, unixFilePath.lastIndexOf('/'));
         }
 
-        String unixFilePath = FilenameUtils.separatorsToUnix(filePath);
         String sourceRoot = StringUtils.substringBefore(
                 unixFilePath, StringUtils.replace(packageName, ".", "/"));
 

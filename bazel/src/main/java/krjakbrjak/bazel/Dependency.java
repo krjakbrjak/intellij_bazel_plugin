@@ -1,7 +1,10 @@
 package krjakbrjak.bazel;
 
-import krjakbrjak.bazel.utils.JavaUtils;
+import krjakbrjak.bazel.utils.JavaFile;
+import krjakbrjak.bazel.utils.JavaFileProcessor;
+import krjakbrjak.bazel.utils.JavaUnit;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -25,10 +28,11 @@ public class Dependency {
      * @param dependency {@link krjakbrjak.bazel.Dependency} object.
      * @return {@code String} or {@code null} if {@code dependency} is not {@code SourceType.SOURCE_CODE}.
      */
-    public static String getSourceSet(Dependency dependency) {
+    public static SourceSet getSourceSet(Dependency dependency) {
         if (dependency.getSourceType().equals(SourceType.SOURCE_CODE)) {
             try {
-                return JavaUtils.getSourceSet(dependency.getPath());
+                JavaUnit unit = new JavaFile(new File(dependency.getPath()));
+                return new SourceSet(new JavaFileProcessor().getSourceRoot(dependency.getPath(), unit), unit.getPackageName());
             } catch (IOException ignored) {
             }
         }
