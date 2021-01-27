@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,7 +19,7 @@ public class JavaUtilsTest {
                     "public class A {}"
             );
             Assertions.assertDoesNotThrow(() -> {
-                String packageName = new JavaFile().getPackageName(content);
+                String packageName = new JavaFile(content).getPackageName();
                 Assertions.assertEquals("krjakbrjak.bazel", packageName);
             });
         }
@@ -31,7 +30,7 @@ public class JavaUtilsTest {
                     "packagekrjakbrjak.bazel;",
                     "public class A {}"
             );
-            Assertions.assertThrows(IOException.class, () -> new JavaFile().getPackageName(content));
+            Assertions.assertThrows(IOException.class, () -> new JavaFile(content).getPackageName());
         }
 
         {
@@ -40,7 +39,7 @@ public class JavaUtilsTest {
                     "public class A {}"
             );
             Assertions.assertDoesNotThrow(() -> {
-                String packageName = new JavaFile().getPackageName(content);
+                String packageName = new JavaFile(content).getPackageName();
                 Assertions.assertEquals(StringUtils.EMPTY, packageName);
             });
         }
@@ -55,24 +54,24 @@ public class JavaUtilsTest {
         );
 
         JavaUnit unit = mock(JavaUnit.class);
-        when(unit.getPackageName(anyString())).thenReturn("krjakbrjak.bazel");
+        when(unit.getPackageName()).thenReturn("krjakbrjak.bazel");
 
         Assertions.assertDoesNotThrow(() -> {
-            String sourceRoot = new JavaFileProcessor().getSourceRoot(content, "src/krjakbrjak/bazel/Example.java", unit);
+            String sourceRoot = new JavaFileProcessor().getSourceRoot("src/krjakbrjak/bazel/Example.java", unit);
             Assertions.assertEquals("src/", sourceRoot);
         });
 
         Assertions.assertDoesNotThrow(() -> {
-            String sourceRoot = new JavaFileProcessor().getSourceRoot(content, "src\\krjakbrjak\\bazel\\Example.java", unit);
+            String sourceRoot = new JavaFileProcessor().getSourceRoot("src\\krjakbrjak\\bazel\\Example.java", unit);
             Assertions.assertEquals("src/", sourceRoot);
         });
 
         Assertions.assertThrows(
                 IOException.class,
-                () -> new JavaFileProcessor().getSourceRoot(content, "/bazel/Example.java", unit));
+                () -> new JavaFileProcessor().getSourceRoot("/bazel/Example.java", unit));
 
         Assertions.assertDoesNotThrow(() -> {
-            String sourceRoot = new JavaFileProcessor().getSourceRoot(content, "krjakbrjak/bazel/Example.java", unit);
+            String sourceRoot = new JavaFileProcessor().getSourceRoot("krjakbrjak/bazel/Example.java", unit);
             Assertions.assertEquals("", sourceRoot);
         });
     }
