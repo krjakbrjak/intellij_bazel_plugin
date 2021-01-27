@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
 
 /**
@@ -139,21 +141,25 @@ public class BazelProjectResolver implements ExternalSystemProjectResolver<Bazel
                     .thenApplyAsync(deps -> {
                         LibraryData libraryData = new LibraryData(BazelConstants.SYSTEM_ID,
                                 FilenameUtils.getName(projectPath));
+                        Set<SourceSet> sourceSets = new HashSet<>();
                         deps.stream().map(Dependency::new)
                                 .distinct()
                                 .forEach(entry -> {
                                     if (entry.getSourceType() == SourceType.SOURCE_CODE) {
-                                        String sourceSet = Dependency.getSourceSet(entry);
+                                        SourceSet sourceSet = Dependency.getSourceSet(entry);
                                         if (sourceSet != null) {
-                                            ContentRootData contentRootData = new ContentRootData(BazelConstants.SYSTEM_ID,
-                                                    sourceSet);
-                                            contentRootData.storePath(ExternalSystemSourceType.SOURCE, sourceSet);
-                                            module.createChild(ProjectKeys.CONTENT_ROOT, contentRootData);
+                                            sourceSets.add(sourceSet);
                                         }
                                     } else {
                                         libraryData.addPath(LibraryPathType.BINARY, entry.getPath());
                                     }
                                 });
+                        sourceSets.forEach(sourceSet -> {
+                            ContentRootData contentRootData = new ContentRootData(BazelConstants.SYSTEM_ID,
+                                    sourceSet.getPath());
+                            contentRootData.storePath(ExternalSystemSourceType.SOURCE, sourceSet.getPath(), sourceSet.getPackage());
+                            module.createChild(ProjectKeys.CONTENT_ROOT, contentRootData);
+                        });
                         module.createChild(ProjectKeys.LIBRARY_DEPENDENCY,
                                 new LibraryDependencyData(module.getData(), libraryData, LibraryLevel.MODULE));
                         return null;
