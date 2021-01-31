@@ -8,8 +8,6 @@
     <p>Currently it adds an option to import Bazel project from existing sources.</p>
     ]]></description>
 
-    <change-notes>An initial (0.0.1a) release of IdeaBazel plugin.</change-notes>
-
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
