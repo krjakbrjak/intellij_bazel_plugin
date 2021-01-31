@@ -6,10 +6,7 @@ import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.treeStructure.Tree;
-import krjakbrjak.bazel.tasks.BazelTask;
-import krjakbrjak.bazel.tasks.CleanTask;
-import krjakbrjak.bazel.tasks.DebugTask;
-import krjakbrjak.bazel.tasks.RunTask;
+import krjakbrjak.bazel.tasks.*;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -36,6 +33,7 @@ public class BazelTasksWindow {
 
     private void createUIComponents() {
         DefaultMutableTreeNode top = new DefaultMutableTreeNode(resourceBundle.getString("bazel.toolwindow.tasks.node.name"));
+        top.add(new DefaultMutableTreeNode(new BuildTask()));
         top.add(new DefaultMutableTreeNode(new RunTask()));
         top.add(new DefaultMutableTreeNode(new DebugTask()));
         top.add(new DefaultMutableTreeNode(new CleanTask()));
