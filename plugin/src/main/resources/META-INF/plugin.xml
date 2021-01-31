@@ -35,6 +35,8 @@
         <externalSystemManager implementation="krjakbrjak.bazel.plugin.project.BazelManager"/>
         <registryKey key="BAZEL.system.in.process" defaultValue="true"
                      description="Use 'in-process' mode for Bazel builds"/>
+        <toolWindow factoryClass="krjakbrjak.bazel.plugin.project.execution.BazelTasksFactory" id="Bazel" anchor="right"
+                    icon="Icons.BazelLogo13x13"/>
     </extensions>
 
     <actions>
