@@ -8,9 +8,9 @@ import com.intellij.openapi.externalSystem.service.project.wizard.AbstractExtern
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import icons.Icons;
 import krjakbrjak.bazel.plugin.project.settings.ImportFromBazelControl;
 import krjakbrjak.bazel.plugin.util.BazelConstants;
-import krjakbrjak.bazel.plugin.util.Icons;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,7 +34,7 @@ public class BazelProjectImportBuilder extends AbstractExternalProjectImportBuil
 
     @Override
     public Icon getIcon() {
-        return Icons.BazelLogo;
+        return Icons.BazelLogo16x16;
     }
 
     @Override

@@ -10,11 +10,15 @@ import krjakbrjak.bazel.Handle;
 import krjakbrjak.bazel.Library;
 import krjakbrjak.bazel.Result;
 import krjakbrjak.bazel.plugin.settings.BazelExecutionSettings;
+import krjakbrjak.bazel.tasks.BazelTaskNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,13 +46,16 @@ public class BazelTaskManager implements ExternalSystemTaskManager<BazelExecutio
     ) throws ExternalSystemException {
         listener.onStart(id, projectPath);
         Optional<String> opt = taskNames.stream().findFirst();
-        String task = opt.orElse("build");
+        String task = opt.orElse(BazelTaskNames.BUILD.getName());
         ExecutableContext exeCtx = ServiceManager.getService(Library.class).getContext()
                 .getExecutableBuilder()
                 .withCommand(settings.getExecutable())
                 .build();
         try {
-            List<String> args = new ArrayList<>(List.of(task, settings.getTarget()));
+            List<String> args = new ArrayList<>(List.of(task));
+            if (!task.equals(BazelTaskNames.CLEAN.getName())) {
+                args.add(settings.getTarget());
+            }
             if (settings.getArguments().size() > 0) {
                 args.add("--");
                 args.addAll(settings.getArguments());
